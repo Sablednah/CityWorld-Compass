@@ -1,0 +1,38 @@
+# CityWorld Compass — neoforge.mods.toml (values are expanded from gradle.properties at build time).
+# EDIT THIS TEMPLATE, never the generated copy under build/.
+modLoader="javafml"
+loaderVersion="${loader_version_range}"
+license="${mod_license}"
+issueTrackerURL="https://github.com/Sablednah/CityWorld-Compass/issues"
+
+[[mods]]
+modId="${mod_id}"
+version="${mod_version}"
+displayName="${mod_name}"
+authors="${mod_authors}"
+description='''
+${mod_description}
+'''
+logoBlur=false
+
+[[dependencies.${mod_id}]]
+    modId="neoforge"
+    type="required"
+    versionRange="${neo_version_range}"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="minecraft"
+    type="required"
+    versionRange="${minecraft_version_range}"
+    ordering="NONE"
+    side="BOTH"
+
+# The compass searches CityWorld's plan through its public API (CityWorldAPI.findables / find), added in 6.6.0.
+[[dependencies.${mod_id}]]
+    modId="cityworld"
+    type="required"
+    versionRange="${cityworld_version_range}"
+    ordering="AFTER"
+    side="BOTH"

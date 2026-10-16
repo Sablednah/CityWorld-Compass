@@ -1,0 +1,205 @@
+plugins {
+    id 'java-library'
+    id 'maven-publish'
+    id 'net.neoforged.moddev' version '2.0.144'
+    id 'idea'
+}
+
+tasks.named('wrapper', Wrapper).configure {
+    distributionType = Wrapper.DistributionType.BIN
+}
+
+// The jar carries the Minecraft version it was built against, on EVERY branch:
+// cityworld_compass-1.0.0+mc26.2.jar. All version branches share a mod_version, so the files would
+// otherwise be indistinguishable in a mods folder. The version INSIDE neoforge.mods.toml stays plain.
+version = "${mod_version}+mc${minecraft_version}"
+group = mod_group_id
+
+// A Windows-side client build gets its own build directory so it never tries to replace artifacts the
+// WSL dev server holds open (Standards learned this one: a shared build/ fails with "Unable to delete file").
+if (project.hasProperty('winClient')) {
+    layout.buildDirectory = layout.projectDirectory.dir("build-win-${project.winClient}")
+}
+
+sourceSets.main.resources {
+    srcDir('src/generated/resources')
+    exclude("**/*.bbmodel")
+    exclude("src/generated/**/.cache")
+}
+
+repositories {
+}
+
+base {
+    archivesName = mod_id
+}
+
+// Minecraft 26.x ships Java 25 to players.
+java.toolchain.languageVersion = JavaLanguageVersion.of(25)
+
+neoForge {
+    version = project.neo_version
+
+    if (project.parchment_minecraft_version?.trim() && project.parchment_mappings_version?.trim()) {
+        parchment {
+            minecraftVersion = project.parchment_minecraft_version
+            mappingsVersion = project.parchment_mappings_version
+        }
+    }
+
+    runs {
+        client {
+            client()
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+        }
+
+        // A second pair of hands: TestBuddy auto-joins the dev server, no second account needed.
+        clientBuddy {
+            client()
+            programArguments.addAll '--username', 'TestBuddy',
+                    '--quickPlayMultiplayer', "127.0.0.1:${project.dev_server_port}".toString()
+            gameDirectory = file('runBuddy')
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+        }
+
+        server {
+            server()
+            // A world per Minecraft line: a 26.x server pointed at an older world upgrades it in place.
+            gameDirectory = file("run-mc${project.minecraft_version}")
+            // Capped: sibling dev servers and their Gradle daemons share one box.
+            jvmArgument '-Xmx2G'
+            programArgument '--nogui'
+            programArguments.addAll '--port', project.dev_server_port
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            // -Pselftest -> runs SelfTest on ServerStartedEvent. A -D on the gradlew line lands on
+            // GRADLE's JVM, not the forked server, so it has to be translated here.
+            systemProperty 'cityworld_compass.selftest', project.hasProperty('selftest') ? 'true' : 'false'
+        }
+
+        gameTestServer {
+            type = "gameTestServer"
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+        }
+
+        data {
+            data()
+            programArguments.addAll '--mod', project.mod_id, '--all',
+                    '--output', file('src/generated/resources/').getAbsolutePath(),
+                    '--existing', file('src/main/resources/').getAbsolutePath()
+        }
+
+        configureEach {
+            systemProperty 'forge.logging.markers', 'REGISTRIES'
+            logLevel = org.slf4j.event.Level.DEBUG
+        }
+    }
+
+    mods {
+        "${mod_id}" {
+            sourceSet(sourceSets.main)
+        }
+    }
+}
+
+configurations {
+    runtimeClasspath.extendsFrom localRuntime
+}
+
+dependencies {
+    // CityWorld's public API (me.daddychurchill.CityWorld.api). compileOnly: the player installs CityWorld itself,
+    // and the jar must never carry a copy. GPL-3, so this mod is GPL-3 too.
+    compileOnly files(project.cityworld_jar)
+}
+
+// The dev server needs CityWorld in its mods folder (a compileOnly jar is not on the run classpath).
+tasks.register('copyCityWorld', Copy) {
+    from project.cityworld_jar
+    into "run-mc${project.minecraft_version}/mods"
+}
+
+// ---------------------------------------------------------------------------
+// Build stamp (family format, agreed 2026-09-10; LegendQuest has the reference). A version number answers
+// "which release"; the stamp answers "which bytes"; the startup line says what RAN. Tolerant of git being
+// absent: an unknown stamp must never fail a build.
+static String gitOut(File dir, String... args) {
+    try {
+        var proc = new ProcessBuilder(args).directory(dir).redirectErrorStream(true).start()
+        var out = proc.inputStream.text.trim()
+        return proc.waitFor() == 0 && !out.isEmpty() ? out : null
+    } catch (Exception ignored) {
+        return null
+    }
+}
+var buildCommit = gitOut(projectDir, "git", "rev-parse", "--short=8", "HEAD") ?: "unknown"
+var buildBranch = gitOut(projectDir, "git", "rev-parse", "--abbrev-ref", "HEAD") ?: "unknown"
+var buildDirty  = gitOut(projectDir, "git", "status", "--porcelain")
+if (buildDirty) buildCommit += "-dirty"   // built from uncommitted changes; say so
+// The COMMIT's time, not the wall clock: a wall-clock stamp changes every Gradle run, so the generated
+// resource changes, so processResources and jar are never up to date.
+var commitEpoch = gitOut(projectDir, "git", "show", "-s", "--format=%ct", "HEAD")
+var buildTime = commitEpoch
+        ? new Date(commitEpoch.toLong() * 1000L).format("yyyy-MM-dd'T'HH:mm:ss'Z'", TimeZone.getTimeZone("UTC"))
+        : "unknown"
+logger.lifecycle("Build stamp: ${buildCommit} on ${buildBranch} at ${buildTime}")
+
+var generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {
+    var replaceProperties = [
+            minecraft_version      : minecraft_version,
+            minecraft_version_range: minecraft_version_range,
+            neo_version            : neo_version,
+            neo_version_range      : neo_version_range,
+            loader_version_range   : loader_version_range,
+            mod_id                 : mod_id,
+            mod_name               : mod_name,
+            mod_license            : mod_license,
+            mod_version            : mod_version,
+            mod_authors            : mod_authors,
+            mod_description        : mod_description,
+            build_commit           : buildCommit,
+            build_branch           : buildBranch,
+            build_time             : buildTime,
+            cityworld_version_range: cityworld_version_range,
+    ]
+    inputs.properties replaceProperties
+    expand replaceProperties
+    from "src/main/templates"
+    into "build/generated/sources/modMetadata"
+}
+sourceSets.main.resources.srcDir generateModMetadata
+neoForge.ideSyncTask generateModMetadata
+
+tasks.named('jar', Jar) {
+    manifest {
+        attributes([
+                "Implementation-Title"  : mod_name,
+                "Implementation-Version": "${mod_version}+mc${minecraft_version}".toString(),
+                "Build-Commit"          : buildCommit,
+                "Build-Branch"          : buildBranch,
+                "Build-Time"            : buildTime,
+        ])
+    }
+}
+
+publishing {
+    publications {
+        register('mavenJava', MavenPublication) {
+            from components.java
+        }
+    }
+    repositories {
+        maven {
+            url "file://${project.projectDir}/repo"
+        }
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+idea {
+    module {
+        downloadSources = true
+        downloadJavadoc = true
+    }
+}

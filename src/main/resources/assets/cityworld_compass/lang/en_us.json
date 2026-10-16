@@ -1,0 +1,21 @@
+{
+  "item.cityworld_compass.urban_compass": "Urban Compass",
+  "cityworld_compass.screen.title": "Urban Compass",
+  "cityworld_compass.screen.search": "Search places, shops, districts, buildings",
+  "cityworld_compass.screen.seek": "Seek",
+  "cityworld_compass.group.city": "City",
+  "cityworld_compass.group.place": "Place",
+  "cityworld_compass.group.shop": "Shop",
+  "cityworld_compass.group.district": "District",
+  "cityworld_compass.group.building": "Building",
+  "cityworld_compass.searching": "Seeking the nearest %s...",
+  "cityworld_compass.found": "%s: %s blocks away",
+  "cityworld_compass.none": "No %s within %s blocks",
+  "cityworld_compass.busy": "The compass is still searching",
+  "cityworld_compass.unknown": "The compass does not know that place",
+  "cityworld_compass.not_cityworld": "The needle spins: this is no CityWorld",
+  "cityworld_compass.seeking": "Seeking: %s",
+  "cityworld_compass.hint": "Use to choose; sneak-use to search again from here",
+  "cityworld_compass.gave_up": "Still no %s after %s seconds: use again to search further",
+  "cityworld_compass.still_searching": "Seeking the nearest %s... %ss"
+}

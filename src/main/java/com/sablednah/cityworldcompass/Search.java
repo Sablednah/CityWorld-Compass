@@ -1,0 +1,149 @@
+package com.sablednah.cityworldcompass;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import me.daddychurchill.CityWorld.api.CityWorldAPI;
+import me.daddychurchill.CityWorld.api.Findable;
+import me.daddychurchill.CityWorld.api.LotInfo;
+
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.GlobalPos;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.CustomData;
+import net.minecraft.world.item.component.LodestoneTracker;
+
+/**
+ * The server side of a compass: the menu, and a search off the server thread that points the needle when it
+ * answers. One search per player at a time.
+ */
+public final class Search {
+
+    private Search() {
+    }
+
+    /** Custom-data keys on the compass: what it seeks, and its title. */
+    static final String TARGET = "cityworld_compass_target", TITLE = "cityworld_compass_title";
+
+    private static final Set<UUID> SEARCHING = ConcurrentHashMap.newKeySet();
+    /** Keeps "seeking..." on screen while a long search runs (an overlay message fades after a few seconds). */
+    private static final java.util.concurrent.ScheduledExecutorService TICKER = Executors.newSingleThreadScheduledExecutor(r -> {
+        Thread t = new Thread(r, "cityworld-compass-ticker");
+        t.setDaemon(true);
+        return t;
+    });
+
+    private static final ExecutorService WORKERS = Executors.newFixedThreadPool(2, r -> {
+        Thread t = new Thread(r, "cityworld-compass-search");
+        t.setDaemon(true);
+        return t;
+    });
+
+    /** What this level has to find, as menu lines; empty off a CityWorld level. */
+    static List<Network.Entry> menu(ServerLevel level) {
+        return CityWorldAPI.findables(level).stream().map(f -> new Network.Entry(f.id(), f.group(), f.title())).toList();
+    }
+
+    /** The id the compass seeks, or "" for none. */
+    static String target(ItemStack stack) {
+        CustomData data = stack.get(DataComponents.CUSTOM_DATA);
+        return data == null ? "" : data.copyTag().getStringOr(TARGET, "");
+    }
+
+    static String title(ItemStack stack) {
+        CustomData data = stack.get(DataComponents.CUSTOM_DATA);
+        return data == null ? "" : data.copyTag().getStringOr(TITLE, "");
+    }
+
+    /** Search for the nearest {@code id} from where the player stands, and point the compass in {@code hand} at it. */
+    public static void seek(ServerPlayer player, InteractionHand hand, String id) {
+        if (!player.getItemInHand(hand).is(CityWorldCompass.URBAN_COMPASS.get()))
+            return;
+        ServerLevel level = player.level();
+        Optional<Findable> wanted = CityWorldAPI.findables(level).stream().filter(f -> f.id().equals(id)).findFirst();
+        if (wanted.isEmpty()) {
+            player.sendOverlayMessage(Component.translatable("cityworld_compass.unknown"));
+            return;
+        }
+        if (!SEARCHING.add(player.getUUID())) {
+            player.sendOverlayMessage(Component.translatable("cityworld_compass.busy"));
+            return;
+        }
+        String title = wanted.get().title();
+        BlockPos from = player.blockPosition();
+        int radius = Config.RADIUS.get();
+        long budget = Config.BUDGET_SECONDS.get() * 1000L;
+        player.sendOverlayMessage(Component.translatable("cityworld_compass.searching", title));
+        long started = System.nanoTime();
+        var ticker = TICKER.scheduleAtFixedRate(() -> level.getServer().execute(() -> {
+            if (SEARCHING.contains(player.getUUID()))
+                player.sendOverlayMessage(Component.translatable("cityworld_compass.still_searching", title,
+                        (System.nanoTime() - started) / 1_000_000_000L));
+        }), 2, 2, java.util.concurrent.TimeUnit.SECONDS);
+        WORKERS.execute(() -> {
+            Optional<BlockPos> found = Optional.empty();
+            long t0 = System.nanoTime();
+            try {
+                found = locate(level, from, id, radius, budget);
+            } catch (RuntimeException e) {
+                CityWorldCompass.LOGGER.warn("CityWorld Compass: search for {} failed", id, e);
+            }
+            long millis = (System.nanoTime() - t0) / 1_000_000;
+            // CityWorld's find stops at the radius or the budget, and answers empty either way: a search that ran
+            // its whole budget may simply not have got far enough yet (the plan it worked out is kept, so a second
+            // try goes further)
+            boolean gaveUp = found.isEmpty() && millis >= budget * 95 / 100;
+            CityWorldCompass.LOGGER.info("CityWorld Compass: {} sought {} from {}: {} in {} ms", player.getName().getString(),
+                    id, from.toShortString(), found.map(BlockPos::toShortString).orElse(gaveUp ? "gave up" : "none"), millis);
+            Optional<BlockPos> result = found;
+            ticker.cancel(false);
+            level.getServer().execute(() -> {
+                SEARCHING.remove(player.getUUID());
+                ItemStack stack = player.getItemInHand(hand);
+                if (!stack.is(CityWorldCompass.URBAN_COMPASS.get()))
+                    return; // put away while it searched
+                CompoundTag tag = new CompoundTag();
+                tag.putString(TARGET, id);
+                tag.putString(TITLE, title);
+                stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
+                if (result.isPresent()) {
+                    BlockPos at = result.get();
+                    stack.set(DataComponents.LODESTONE_TRACKER,
+                            new LodestoneTracker(Optional.of(GlobalPos.of(level.dimension(), at)), false));
+                    int distance = (int) Math.round(Math.hypot(at.getX() - player.getX(), at.getZ() - player.getZ()));
+                    player.sendOverlayMessage(Component.translatable("cityworld_compass.found", title, distance));
+                } else {
+                    stack.remove(DataComponents.LODESTONE_TRACKER); // the needle spins
+                    player.sendOverlayMessage(gaveUp
+                            ? Component.translatable("cityworld_compass.gave_up", title, budget / 1000)
+                            : Component.translatable("cityworld_compass.none", title, radius));
+                }
+            });
+        });
+    }
+
+    /** Where to point for the nearest {@code id}: a vault's door, else the middle of the chunk at street level. */
+    static Optional<BlockPos> locate(ServerLevel level, BlockPos from, String id, int radius, long budgetMillis) {
+        List<LotInfo> hits = CityWorldAPI.find(level, from, id, radius, 1, budgetMillis);
+        if (hits.isEmpty())
+            return Optional.empty();
+        LotInfo lot = hits.get(0);
+        if (id.equals("place:vault")) {
+            Optional<BlockPos> door = CityWorldAPI.vaultEntrance(level, lot.chunk());
+            if (door.isPresent())
+                return door;
+        }
+        return Optional.of(new BlockPos(lot.chunk().getMiddleBlockX(), lot.streetLevel() + 1, lot.chunk().getMiddleBlockZ()));
+    }
+}

@@ -1,0 +1,42 @@
+### Gradle ###
+.gradle
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+### IDEs ###
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+.run/
+.classpath
+.project
+.settings/
+bin/
+.vscode/
+.DS_Store
+
+### Local editor/agent settings ###
+/.claude/settings.local.json
+
+### Minecraft modding ###
+run/
+run-mc*/
+runBuddy/
+build-win-*/
+repo/
+/libs/
+/tools/jdk*/
+/.apisrc/
+**/src/generated/**/.cache/
+
+### Store screenshots (uploaded by hand) ###
+/screenshots/
+
+### Dev server logs ###
+server.log
+
+### Raw Pixabay recordings (licensed for the cut clips in the jar, not for redistribution as files) ###
+art/*/sounds/*.mp3
+tools

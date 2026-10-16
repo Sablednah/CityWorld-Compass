@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "L": "minecraft:lodestone",
+    "B": "minecraft:bricks",
+    "C": "minecraft:compass"
+  },
+  "pattern": [
+    "LBL",
+    "BCB",
+    "LBL"
+  ],
+  "result": {
+    "id": "cityworld_compass:urban_compass"
+  }
+}
