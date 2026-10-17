@@ -1,7 +1,9 @@
 package com.sablednah.cityworldcompass;
 
+import java.util.function.Supplier;
+
+import com.google.common.base.Suppliers;
 import com.mojang.serialization.Codec;
-import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
@@ -9,8 +11,8 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.storage.loot.LootContext;
 import net.minecraft.world.level.storage.loot.predicates.LootItemCondition;
-import net.neoforged.neoforge.common.loot.IGlobalLootModifier;
-import net.neoforged.neoforge.common.loot.LootModifier;
+import net.minecraftforge.common.loot.IGlobalLootModifier;
+import net.minecraftforge.common.loot.LootModifier;
 
 /**
  * A compass, now and then, in a CityWorld chest: any {@code cityworld:chests/...} table the game rolls, with
@@ -19,9 +21,9 @@ import net.neoforged.neoforge.common.loot.LootModifier;
  */
 public final class CityWorldChestLoot extends LootModifier {
 
-    public static final MapCodec<CityWorldChestLoot> CODEC = RecordCodecBuilder.mapCodec(i -> codecStart(i)
+    public static final Supplier<Codec<CityWorldChestLoot>> CODEC = Suppliers.memoize(() -> RecordCodecBuilder.create(i -> codecStart(i)
             .and(Codec.floatRange(0.0F, 1.0F).fieldOf("chance").forGetter(m -> m.chance))
-            .apply(i, CityWorldChestLoot::new));
+            .apply(i, CityWorldChestLoot::new)));
 
     private final float chance;
 
@@ -40,7 +42,7 @@ public final class CityWorldChestLoot extends LootModifier {
     }
 
     @Override
-    public MapCodec<? extends IGlobalLootModifier> codec() {
-        return CODEC;
+    public Codec<? extends IGlobalLootModifier> codec() {
+        return CODEC.get();
     }
 }

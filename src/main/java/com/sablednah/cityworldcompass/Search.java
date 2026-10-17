@@ -13,16 +13,16 @@ import me.daddychurchill.CityWorld.api.Findable;
 import me.daddychurchill.CityWorld.api.LotInfo;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.GlobalPos;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtOps;
+import net.minecraft.nbt.NbtUtils;
+import net.minecraft.world.item.CompassItem;
+import net.minecraft.world.level.Level;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.component.CustomData;
-import net.minecraft.world.item.component.LodestoneTracker;
 
 /**
  * The server side of a compass: the menu, and a search off the server thread that points the needle when it
@@ -57,13 +57,31 @@ public final class Search {
 
     /** The id the compass seeks, or "" for none. */
     static String target(ItemStack stack) {
-        CustomData data = stack.get(DataComponents.CUSTOM_DATA);
-        return data == null ? "" : data.copyTag().getString(TARGET);
+        CompoundTag tag = stack.getTag();
+        return tag == null ? "" : tag.getString(TARGET);
     }
 
     static String title(ItemStack stack) {
-        CustomData data = stack.get(DataComponents.CUSTOM_DATA);
-        return data == null ? "" : data.copyTag().getString(TITLE);
+        CompoundTag tag = stack.getTag();
+        return tag == null ? "" : tag.getString(TITLE);
+    }
+
+    /** Point the needle: vanilla's lodestone tags (1.20.1 has no data components), untracked so no lodestone is needed. */
+    private static void point(ItemStack stack, Level level, BlockPos at) {
+        CompoundTag tag = stack.getOrCreateTag();
+        tag.put(CompassItem.TAG_LODESTONE_POS, NbtUtils.writeBlockPos(at));
+        Level.RESOURCE_KEY_CODEC.encodeStart(NbtOps.INSTANCE, level.dimension()).result()
+                .ifPresent(dim -> tag.put(CompassItem.TAG_LODESTONE_DIMENSION, dim));
+        tag.putBoolean(CompassItem.TAG_LODESTONE_TRACKED, false);
+    }
+
+    private static void unpoint(ItemStack stack) {
+        CompoundTag tag = stack.getTag();
+        if (tag != null) {
+            tag.remove(CompassItem.TAG_LODESTONE_POS);
+            tag.remove(CompassItem.TAG_LODESTONE_DIMENSION);
+            tag.remove(CompassItem.TAG_LODESTONE_TRACKED);
+        }
     }
 
     /** Search for the nearest {@code id} from where the player stands, and point the compass in {@code hand} at it. */
@@ -113,18 +131,16 @@ public final class Search {
                 ItemStack stack = player.getItemInHand(hand);
                 if (!stack.is(CityWorldCompass.URBAN_COMPASS.get()))
                     return; // put away while it searched
-                CompoundTag tag = new CompoundTag();
+                CompoundTag tag = stack.getOrCreateTag();
                 tag.putString(TARGET, id);
                 tag.putString(TITLE, title);
-                stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
                 if (result.isPresent()) {
                     BlockPos at = result.get();
-                    stack.set(DataComponents.LODESTONE_TRACKER,
-                            new LodestoneTracker(Optional.of(GlobalPos.of(level.dimension(), at)), false));
+                    point(stack, level, at);
                     int distance = (int) Math.round(Math.hypot(at.getX() - player.getX(), at.getZ() - player.getZ()));
                     player.displayClientMessage(Component.translatable("cityworld_compass.found", title, distance), true);
                 } else {
-                    stack.remove(DataComponents.LODESTONE_TRACKER); // the needle spins
+                    unpoint(stack); // the needle spins
                     player.displayClientMessage(gaveUp
                             ? Component.translatable("cityworld_compass.gave_up", title, budget / 1000)
                             : Component.translatable("cityworld_compass.none", title, radius), true);

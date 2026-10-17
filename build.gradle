@@ -1,7 +1,7 @@
 plugins {
     id 'java-library'
     id 'maven-publish'
-    id 'net.neoforged.moddev' version '2.0.141'
+    id 'net.neoforged.moddev.legacyforge' version '2.0.147'
     id 'idea'
 }
 
@@ -34,11 +34,11 @@ base {
     archivesName = mod_id
 }
 
-// This line's players run Java 21.
-java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+// Minecraft 1.20.1 runs on Java 17.
+java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 
-neoForge {
-    version = project.neo_version
+legacyForge {
+    version = project.forge_version
 
     if (project.parchment_minecraft_version?.trim() && project.parchment_mappings_version?.trim()) {
         parchment {
@@ -105,6 +105,7 @@ configurations {
     runtimeClasspath.extendsFrom localRuntime
 }
 
+// Forge 1.20.1: SHIP build/libs (reobfuscated); build/devlibs holds a same-named dev-mapped jar that crashes for players.
 dependencies {
     // CityWorld's public API (me.daddychurchill.CityWorld.api). compileOnly: the player installs CityWorld itself,
     // and the jar must never carry a copy. GPL-3, so this mod is GPL-3 too.
@@ -146,8 +147,7 @@ var generateModMetadata = tasks.register("generateModMetadata", ProcessResources
     var replaceProperties = [
             minecraft_version      : minecraft_version,
             minecraft_version_range: minecraft_version_range,
-            neo_version            : neo_version,
-            neo_version_range      : neo_version_range,
+            forge_version_range    : forge_version_range,
             loader_version_range   : loader_version_range,
             mod_id                 : mod_id,
             mod_name               : mod_name,
@@ -166,7 +166,7 @@ var generateModMetadata = tasks.register("generateModMetadata", ProcessResources
     into "build/generated/sources/modMetadata"
 }
 sourceSets.main.resources.srcDir generateModMetadata
-neoForge.ideSyncTask generateModMetadata
+legacyForge.ideSyncTask generateModMetadata
 
 tasks.named('jar', Jar) {
     manifest {

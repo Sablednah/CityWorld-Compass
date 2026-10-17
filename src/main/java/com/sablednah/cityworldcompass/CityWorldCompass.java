@@ -1,26 +1,29 @@
 package com.sablednah.cityworldcompass;
 
 import com.mojang.logging.LogUtils;
-import com.mojang.serialization.MapCodec;
+import com.mojang.serialization.Codec;
 
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.fml.ModContainer;
-import net.neoforged.fml.common.Mod;
-import net.neoforged.fml.config.ModConfig;
-import net.neoforged.neoforge.common.loot.IGlobalLootModifier;
-import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
-import net.neoforged.neoforge.registries.DeferredItem;
-import net.neoforged.neoforge.registries.DeferredRegister;
-import net.neoforged.neoforge.registries.NeoForgeRegistries;
+import net.minecraftforge.common.loot.IGlobalLootModifier;
+import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
+import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.fml.ModLoadingContext;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.config.ModConfig;
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.fml.loading.FMLEnvironment;
+import net.minecraftforge.registries.DeferredRegister;
+import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.RegistryObject;
 
 import org.slf4j.Logger;
 
 /**
  * CityWorld Compass: Nature's Compass for CityWorld's cities. Right-click, pick a kind of place, and the needle
  * points to the nearest one. The search is CityWorld's ({@code CityWorldAPI.findables} / {@code find}): it reads the
- * city plan, so nothing is generated to answer it.
+ * city plan, so nothing is generated to answer it. (Forge 1.20.1: FML injects nothing, so the bus comes from
+ * {@code FMLJavaModLoadingContext}.)
  */
 @Mod(CityWorldCompass.MODID)
 public final class CityWorldCompass {
@@ -28,25 +31,26 @@ public final class CityWorldCompass {
     public static final String MODID = "cityworld_compass";
     public static final Logger LOGGER = LogUtils.getLogger();
 
-    public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(MODID);
-    public static final DeferredItem<UrbanCompassItem> URBAN_COMPASS = ITEMS.registerItem("urban_compass",
-            UrbanCompassItem::new, new Item.Properties().stacksTo(1));
+    public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, MODID);
+    public static final RegistryObject<Item> URBAN_COMPASS = ITEMS.register("urban_compass",
+            () -> new UrbanCompassItem(new Item.Properties().stacksTo(1)));
 
-    public static final DeferredRegister<MapCodec<? extends IGlobalLootModifier>> LOOT_MODIFIERS = DeferredRegister
-            .create(NeoForgeRegistries.Keys.GLOBAL_LOOT_MODIFIER_SERIALIZERS, MODID);
+    public static final DeferredRegister<Codec<? extends IGlobalLootModifier>> LOOT_MODIFIERS = DeferredRegister
+            .create(ForgeRegistries.Keys.GLOBAL_LOOT_MODIFIER_SERIALIZERS, MODID);
     static {
-        LOOT_MODIFIERS.register("cityworld_chests", () -> CityWorldChestLoot.CODEC);
+        LOOT_MODIFIERS.register("cityworld_chests", CityWorldChestLoot.CODEC);
     }
 
-    public CityWorldCompass(IEventBus modBus, ModContainer container) {
+    public CityWorldCompass() {
+        IEventBus modBus = FMLJavaModLoadingContext.get().getModEventBus();
         ITEMS.register(modBus);
         LOOT_MODIFIERS.register(modBus);
-        modBus.addListener(Network::register);
         modBus.addListener(CityWorldCompass::creativeTab);
-        if (net.neoforged.fml.loading.FMLEnvironment.dist.isClient())
+        if (FMLEnvironment.dist.isClient())
             modBus.addListener(com.sablednah.cityworldcompass.client.ClientHandlers::setup);
-        container.registerConfig(ModConfig.Type.STARTUP, Config.SPEC);
-        LOGGER.info("CityWorld Compass {} initialising", container.getModInfo().getVersion());
+        Network.register();
+        ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, Config.SPEC);
+        LOGGER.info("CityWorld Compass {} initialising", ModLoadingContext.get().getActiveContainer().getModInfo().getVersion());
     }
 
     private static void creativeTab(BuildCreativeModeTabContentsEvent event) {

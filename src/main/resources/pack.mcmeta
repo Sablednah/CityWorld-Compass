@@ -1,0 +1,7 @@
+{
+  "_comment": "Forge 1.20.1 ONLY: without pack metadata Forge discards the mod's whole datapack (recipe, loot modifier).",
+  "pack": {
+    "description": "CityWorld Compass",
+    "pack_format": 15
+  }
+}

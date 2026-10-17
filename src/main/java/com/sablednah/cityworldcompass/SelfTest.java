@@ -14,16 +14,16 @@ import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.event.server.ServerStartedEvent;
+import net.minecraftforge.event.server.ServerStartedEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
 
 /**
  * Dev check, run only with {@code -Dcityworld_compass.selftest=true} (gradle {@code -Pselftest}): the menu, a few
  * searches through CityWorld's API, the recipe, and the chest loot rate. It logs {@code COMPASS SELFTEST} lines and
  * never stops the server: the script that started it does that.
  */
-@EventBusSubscriber(modid = CityWorldCompass.MODID)
+@Mod.EventBusSubscriber(modid = CityWorldCompass.MODID)
 public final class SelfTest {
 
     private SelfTest() {
@@ -55,15 +55,15 @@ public final class SelfTest {
                     failures.add(id + " found nothing");
             }
             var recipe = server.getRecipeManager().byKey(
-                    ResourceLocation.fromNamespaceAndPath(CityWorldCompass.MODID, "urban_compass"));
+                    new ResourceLocation(CityWorldCompass.MODID, "urban_compass"));
             log("recipe " + (recipe.isPresent() ? "loaded" : "MISSING"));
             if (recipe.isEmpty())
                 failures.add("recipe missing");
             int rolls = 4000, compasses = 0, extraHits = 0;
-            var table = server.reloadableRegistries().getLootTable(ResourceKey.create(Registries.LOOT_TABLE,
-                    ResourceLocation.fromNamespaceAndPath("cityworld", "chests/building")));
-            var extra = server.reloadableRegistries().getLootTable(ResourceKey.create(Registries.LOOT_TABLE,
-                    ResourceLocation.fromNamespaceAndPath("cityworld", "chests/building_extra")));
+            var table = server.getLootData().getElement(new net.minecraft.world.level.storage.loot.LootDataId<>(
+                    net.minecraft.world.level.storage.loot.LootDataType.TABLE, new ResourceLocation("cityworld", "chests/building")));
+            var extra = server.getLootData().getElement(new net.minecraft.world.level.storage.loot.LootDataId<>(
+                    net.minecraft.world.level.storage.loot.LootDataType.TABLE, new ResourceLocation("cityworld", "chests/building_extra")));
             for (int i = 0; i < rolls; i++) {
                 LootParams params = new LootParams.Builder(level).withParameter(LootContextParams.ORIGIN, Vec3.ZERO)
                         .create(LootContextParamSets.CHEST);

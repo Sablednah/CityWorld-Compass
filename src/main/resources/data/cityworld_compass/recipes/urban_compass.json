@@ -18,7 +18,7 @@
     "LBL"
   ],
   "result": {
-    "count": 1,
-    "id": "cityworld_compass:urban_compass"
+    "item": "cityworld_compass:urban_compass",
+    "count": 1
   }
 }

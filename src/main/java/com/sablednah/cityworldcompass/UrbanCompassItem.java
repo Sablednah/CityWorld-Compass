@@ -12,7 +12,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
  * The compass. Use: open the menu. Sneak-use: search again for what it already seeks (from where you stand now).
@@ -36,15 +35,14 @@ public final class UrbanCompassItem extends Item {
                 if (menu.isEmpty())
                     server.displayClientMessage(Component.translatable("cityworld_compass.not_cityworld"), true);
                 else
-                    PacketDistributor.sendToPlayer(server,
-                            new Network.OpenMenu(menu, hand == InteractionHand.MAIN_HAND, current));
+                    Network.sendToPlayer(server, new Network.OpenMenu(menu, hand == InteractionHand.MAIN_HAND, current));
             }
         }
         return InteractionResultHolder.sidedSuccess(player.getItemInHand(hand), level.isClientSide());
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> builder, TooltipFlag flag) {
+    public void appendHoverText(ItemStack stack, @org.jetbrains.annotations.Nullable Level level, List<Component> builder, TooltipFlag flag) {
         String title = Search.title(stack);
         if (!title.isEmpty())
             builder.add(Component.translatable("cityworld_compass.seeking", title).withStyle(ChatFormatting.GRAY));

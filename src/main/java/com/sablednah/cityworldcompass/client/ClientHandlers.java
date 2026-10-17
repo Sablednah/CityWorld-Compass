@@ -16,13 +16,13 @@ public final class ClientHandlers {
     }
 
     /** The needle: vanilla's compass angle, aimed at the stack's lodestone target (none: it spins). */
-    public static void setup(net.neoforged.fml.event.lifecycle.FMLClientSetupEvent event) {
+    public static void setup(net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent event) {
         event.enqueueWork(() -> net.minecraft.client.renderer.item.ItemProperties.register(
                 com.sablednah.cityworldcompass.CityWorldCompass.URBAN_COMPASS.get(),
-                net.minecraft.resources.ResourceLocation.withDefaultNamespace("angle"),
-                new net.minecraft.client.renderer.item.CompassItemPropertyFunction((level, stack, entity) -> {
-                    var tracker = stack.get(net.minecraft.core.component.DataComponents.LODESTONE_TRACKER);
-                    return tracker == null ? null : tracker.target().orElse(null);
-                })));
+                new net.minecraft.resources.ResourceLocation("angle"),
+                new net.minecraft.client.renderer.item.CompassItemPropertyFunction((level, stack, entity) ->
+                        net.minecraft.world.item.CompassItem.isLodestoneCompass(stack)
+                                ? net.minecraft.world.item.CompassItem.getLodestonePosition(stack.getOrCreateTag())
+                                : null)));
     }
 }
