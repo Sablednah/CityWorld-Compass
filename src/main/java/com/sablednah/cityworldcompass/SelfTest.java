@@ -5,7 +5,7 @@ import java.util.List;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -54,16 +54,16 @@ public final class SelfTest {
                 if (at.isEmpty() && (id.equals("place:subway") || id.equals("city")))
                     failures.add(id + " found nothing");
             }
-            var recipe = server.getRecipeManager().byKey(ResourceKey.create(Registries.RECIPE,
-                    Identifier.fromNamespaceAndPath(CityWorldCompass.MODID, "urban_compass")));
+            var recipe = server.getRecipeManager().byKey(
+                    ResourceLocation.fromNamespaceAndPath(CityWorldCompass.MODID, "urban_compass"));
             log("recipe " + (recipe.isPresent() ? "loaded" : "MISSING"));
             if (recipe.isEmpty())
                 failures.add("recipe missing");
             int rolls = 4000, compasses = 0, extraHits = 0;
             var table = server.reloadableRegistries().getLootTable(ResourceKey.create(Registries.LOOT_TABLE,
-                    Identifier.fromNamespaceAndPath("cityworld", "chests/building")));
+                    ResourceLocation.fromNamespaceAndPath("cityworld", "chests/building")));
             var extra = server.reloadableRegistries().getLootTable(ResourceKey.create(Registries.LOOT_TABLE,
-                    Identifier.fromNamespaceAndPath("cityworld", "chests/building_extra")));
+                    ResourceLocation.fromNamespaceAndPath("cityworld", "chests/building_extra")));
             for (int i = 0; i < rolls; i++) {
                 LootParams params = new LootParams.Builder(level).withParameter(LootContextParams.ORIGIN, Vec3.ZERO)
                         .create(LootContextParamSets.CHEST);

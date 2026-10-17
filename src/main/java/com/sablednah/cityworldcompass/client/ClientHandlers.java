@@ -12,6 +12,17 @@ public final class ClientHandlers {
 
     public static void openMenu(Network.OpenMenu menu) {
         Minecraft minecraft = Minecraft.getInstance();
-        minecraft.gui.setScreen(new CompassScreen(menu));
+        minecraft.setScreen(new CompassScreen(menu));
+    }
+
+    /** The needle: vanilla's compass angle, aimed at the stack's lodestone target (none: it spins). */
+    public static void setup(net.neoforged.fml.event.lifecycle.FMLClientSetupEvent event) {
+        event.enqueueWork(() -> net.minecraft.client.renderer.item.ItemProperties.register(
+                com.sablednah.cityworldcompass.CityWorldCompass.URBAN_COMPASS.get(),
+                net.minecraft.resources.ResourceLocation.withDefaultNamespace("angle"),
+                new net.minecraft.client.renderer.item.CompassItemPropertyFunction((level, stack, entity) -> {
+                    var tracker = stack.get(net.minecraft.core.component.DataComponents.LODESTONE_TRACKER);
+                    return tracker == null ? null : tracker.target().orElse(null);
+                })));
     }
 }

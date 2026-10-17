@@ -7,7 +7,7 @@ import java.util.Locale;
 import com.sablednah.cityworldcompass.Network;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.ObjectSelectionList;
@@ -15,13 +15,13 @@ import net.minecraft.client.gui.components.StringWidget;
 import net.minecraft.client.gui.layouts.HeaderAndFooterLayout;
 import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.input.KeyEvent;
-import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.Util;
+import net.minecraft.client.gui.navigation.CommonInputs;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
-import net.neoforged.neoforge.client.network.ClientPacketDistributor;
+import net.neoforged.neoforge.network.PacketDistributor;
 
-import org.jspecify.annotations.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 /** Pick what the compass seeks: a search box over every place, shop, district and building the world can hold. */
 public final class CompassScreen extends Screen {
@@ -44,7 +44,7 @@ public final class CompassScreen extends Screen {
         header.defaultCellSetting().alignHorizontallyCenter();
         header.addChild(new StringWidget(this.title, this.font));
         this.search = header.addChild(new EditBox(this.font, 0, 0, 200, 15, Component.empty()));
-        this.search.setHint(Component.translatable("cityworld_compass.screen.search").withStyle(EditBox.SEARCH_HINT_STYLE));
+        this.search.setHint(Component.translatable("cityworld_compass.screen.search").withStyle(net.minecraft.ChatFormatting.DARK_GRAY));
         this.search.setResponder(text -> {
             if (this.choices != null)
                 this.choices.filter(text);
@@ -79,19 +79,19 @@ public final class CompassScreen extends Screen {
 
     /** Enter in the search box seeks the highlighted line, or the first line left by the filter. */
     @Override
-    public boolean keyPressed(KeyEvent event) {
-        if (event.isConfirmation() && this.search != null && this.search.isFocused() && this.choices != null) {
+    public boolean keyPressed(int key, int scan, int modifiers) {
+        if ((key == org.lwjgl.glfw.GLFW.GLFW_KEY_ENTER || key == org.lwjgl.glfw.GLFW.GLFW_KEY_KP_ENTER) && this.search != null && this.search.isFocused() && this.choices != null) {
             if (this.choices.getSelected() == null && !this.choices.children().isEmpty())
                 this.choices.setSelected(this.choices.children().get(0));
             this.seek();
             return true;
         }
-        return super.keyPressed(event);
+        return super.keyPressed(key, scan, modifiers);
     }
 
     private void seek() {
         if (this.choices != null && this.choices.getSelected() != null) {
-            ClientPacketDistributor.sendToServer(new Network.Seek(this.choices.getSelected().entry.id(), this.menu.mainHand()));
+            PacketDistributor.sendToServer(new Network.Seek(this.choices.getSelected().entry.id(), this.menu.mainHand()));
             this.onClose();
         }
     }
@@ -115,7 +115,7 @@ public final class CompassScreen extends Screen {
             for (Line l : lines)
                 if (l.entry.id().equals(CompassScreen.this.menu.current()))
                     this.setSelected(l);
-            this.refreshScrollAmount();
+            this.setScrollAmount(0);
         }
 
         @Override
@@ -134,30 +134,34 @@ public final class CompassScreen extends Screen {
                 this.group = Component.translatable("cityworld_compass.group." + entry.group());
             }
 
+            private long lastClick;
+
             @Override
-            public void extractContent(GuiGraphicsExtractor graphics, int mouseX, int mouseY, boolean hovered, float a) {
-                int y = this.getContentYMiddle() - 9 / 2;
-                graphics.text(CompassScreen.this.font, this.title, this.getContentX() + 2, y, -1);
+            public void render(GuiGraphics graphics, int index, int top, int left, int width, int height, int mouseX,
+                    int mouseY, boolean hovered, float a) {
+                int y = top + height / 2 - 9 / 2;
+                graphics.drawString(CompassScreen.this.font, this.title, left + 2, y, -1);
                 int w = CompassScreen.this.font.width(this.group);
-                graphics.text(CompassScreen.this.font, this.group, this.getContentX() + Choices.this.getRowWidth() - w - 8, y, 0xFF909090);
+                graphics.drawString(CompassScreen.this.font, this.group, left + width - w - 8, y, 0xFF909090);
             }
 
             @Override
-            public boolean keyPressed(KeyEvent event) {
-                if (event.isSelection()) {
+            public boolean keyPressed(int key, int scan, int modifiers) {
+                if (CommonInputs.selected(key)) {
                     Choices.this.setSelected(this);
                     CompassScreen.this.seek();
                     return true;
                 }
-                return super.keyPressed(event);
+                return super.keyPressed(key, scan, modifiers);
             }
 
             @Override
-            public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+            public boolean mouseClicked(double mouseX, double mouseY, int button) {
                 Choices.this.setSelected(this);
-                if (doubleClick)
+                if (Util.getMillis() - this.lastClick < 250L)
                     CompassScreen.this.seek();
-                return super.mouseClicked(event, doubleClick);
+                this.lastClick = Util.getMillis();
+                return super.mouseClicked(mouseX, mouseY, button);
             }
 
             @Override

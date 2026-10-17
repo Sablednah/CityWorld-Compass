@@ -30,7 +30,7 @@ public final class CityWorldCompass {
 
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(MODID);
     public static final DeferredItem<UrbanCompassItem> URBAN_COMPASS = ITEMS.registerItem("urban_compass",
-            UrbanCompassItem::new, () -> new Item.Properties().stacksTo(1));
+            UrbanCompassItem::new, new Item.Properties().stacksTo(1));
 
     public static final DeferredRegister<MapCodec<? extends IGlobalLootModifier>> LOOT_MODIFIERS = DeferredRegister
             .create(NeoForgeRegistries.Keys.GLOBAL_LOOT_MODIFIER_SERIALIZERS, MODID);
@@ -43,6 +43,8 @@ public final class CityWorldCompass {
         LOOT_MODIFIERS.register(modBus);
         modBus.addListener(Network::register);
         modBus.addListener(CityWorldCompass::creativeTab);
+        if (net.neoforged.fml.loading.FMLEnvironment.dist.isClient())
+            modBus.addListener(com.sablednah.cityworldcompass.client.ClientHandlers::setup);
         container.registerConfig(ModConfig.Type.STARTUP, Config.SPEC);
         LOGGER.info("CityWorld Compass {} initialising", container.getModInfo().getVersion());
     }

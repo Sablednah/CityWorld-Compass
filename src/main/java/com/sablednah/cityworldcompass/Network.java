@@ -8,7 +8,7 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
@@ -28,7 +28,7 @@ public final class Network {
 
     /** Server → client: open the screen with this menu, for the compass in this hand, now seeking {@code current}. */
     public record OpenMenu(List<Entry> entries, boolean mainHand, String current) implements CustomPacketPayload {
-        public static final Type<OpenMenu> TYPE = new Type<>(Identifier.fromNamespaceAndPath(CityWorldCompass.MODID, "open_menu"));
+        public static final Type<OpenMenu> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(CityWorldCompass.MODID, "open_menu"));
         static final StreamCodec<RegistryFriendlyByteBuf, OpenMenu> CODEC = StreamCodec.composite(
                 Entry.CODEC.apply(ByteBufCodecs.list()), OpenMenu::entries, ByteBufCodecs.BOOL, OpenMenu::mainHand,
                 ByteBufCodecs.STRING_UTF8, OpenMenu::current, OpenMenu::new);
@@ -41,7 +41,7 @@ public final class Network {
 
     /** Client → server: point the compass in this hand at the nearest {@code id}. */
     public record Seek(String id, boolean mainHand) implements CustomPacketPayload {
-        public static final Type<Seek> TYPE = new Type<>(Identifier.fromNamespaceAndPath(CityWorldCompass.MODID, "seek"));
+        public static final Type<Seek> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(CityWorldCompass.MODID, "seek"));
         static final StreamCodec<RegistryFriendlyByteBuf, Seek> CODEC = StreamCodec.composite(
                 ByteBufCodecs.STRING_UTF8, Seek::id, ByteBufCodecs.BOOL, Seek::mainHand, Seek::new);
 
