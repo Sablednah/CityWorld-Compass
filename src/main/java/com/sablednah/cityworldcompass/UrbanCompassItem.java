@@ -35,7 +35,7 @@ public final class UrbanCompassItem extends Item {
             else {
                 var menu = Search.menu(server.level());
                 if (menu.isEmpty())
-                    server.sendOverlayMessage(Component.translatable("cityworld_compass.not_cityworld"));
+                    server.displayClientMessage(Component.translatable("cityworld_compass.not_cityworld"), true);
                 else
                     PacketDistributor.sendToPlayer(server,
                             new Network.OpenMenu(menu, hand == InteractionHand.MAIN_HAND, current));

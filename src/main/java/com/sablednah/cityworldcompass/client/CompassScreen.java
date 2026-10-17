@@ -7,7 +7,7 @@ import java.util.Locale;
 import com.sablednah.cityworldcompass.Network;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.ObjectSelectionList;
@@ -135,11 +135,11 @@ public final class CompassScreen extends Screen {
             }
 
             @Override
-            public void extractContent(GuiGraphicsExtractor graphics, int mouseX, int mouseY, boolean hovered, float a) {
+            public void renderContent(GuiGraphics graphics, int mouseX, int mouseY, boolean hovered, float a) {
                 int y = this.getContentYMiddle() - 9 / 2;
-                graphics.text(CompassScreen.this.font, this.title, this.getContentX() + 2, y, -1);
+                graphics.drawString(CompassScreen.this.font, this.title, this.getContentX() + 2, y, -1);
                 int w = CompassScreen.this.font.width(this.group);
-                graphics.text(CompassScreen.this.font, this.group, this.getContentX() + Choices.this.getRowWidth() - w - 8, y, 0xFF909090);
+                graphics.drawString(CompassScreen.this.font, this.group, this.getContentX() + Choices.this.getRowWidth() - w - 8, y, 0xFF909090);
             }
 
             @Override

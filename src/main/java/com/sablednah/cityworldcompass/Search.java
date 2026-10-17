@@ -73,23 +73,23 @@ public final class Search {
         ServerLevel level = player.level();
         Optional<Findable> wanted = CityWorldAPI.findables(level).stream().filter(f -> f.id().equals(id)).findFirst();
         if (wanted.isEmpty()) {
-            player.sendOverlayMessage(Component.translatable("cityworld_compass.unknown"));
+            player.displayClientMessage(Component.translatable("cityworld_compass.unknown"), true);
             return;
         }
         if (!SEARCHING.add(player.getUUID())) {
-            player.sendOverlayMessage(Component.translatable("cityworld_compass.busy"));
+            player.displayClientMessage(Component.translatable("cityworld_compass.busy"), true);
             return;
         }
         String title = wanted.get().title();
         BlockPos from = player.blockPosition();
         int radius = Config.RADIUS.get();
         long budget = Config.BUDGET_SECONDS.get() * 1000L;
-        player.sendOverlayMessage(Component.translatable("cityworld_compass.searching", title));
+        player.displayClientMessage(Component.translatable("cityworld_compass.searching", title), true);
         long started = System.nanoTime();
         var ticker = TICKER.scheduleAtFixedRate(() -> level.getServer().execute(() -> {
             if (SEARCHING.contains(player.getUUID()))
-                player.sendOverlayMessage(Component.translatable("cityworld_compass.still_searching", title,
-                        (System.nanoTime() - started) / 1_000_000_000L));
+                player.displayClientMessage(Component.translatable("cityworld_compass.still_searching", title,
+                        (System.nanoTime() - started) / 1_000_000_000L), true);
         }), 2, 2, java.util.concurrent.TimeUnit.SECONDS);
         WORKERS.execute(() -> {
             Optional<BlockPos> found = Optional.empty();
@@ -122,12 +122,12 @@ public final class Search {
                     stack.set(DataComponents.LODESTONE_TRACKER,
                             new LodestoneTracker(Optional.of(GlobalPos.of(level.dimension(), at)), false));
                     int distance = (int) Math.round(Math.hypot(at.getX() - player.getX(), at.getZ() - player.getZ()));
-                    player.sendOverlayMessage(Component.translatable("cityworld_compass.found", title, distance));
+                    player.displayClientMessage(Component.translatable("cityworld_compass.found", title, distance), true);
                 } else {
                     stack.remove(DataComponents.LODESTONE_TRACKER); // the needle spins
-                    player.sendOverlayMessage(gaveUp
+                    player.displayClientMessage(gaveUp
                             ? Component.translatable("cityworld_compass.gave_up", title, budget / 1000)
-                            : Component.translatable("cityworld_compass.none", title, radius));
+                            : Component.translatable("cityworld_compass.none", title, radius), true);
                 }
             });
         });
