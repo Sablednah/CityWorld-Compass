@@ -25,8 +25,8 @@ public final class CityWorldChestLoot extends LootModifier {
 
     private final float chance;
 
-    public CityWorldChestLoot(LootItemCondition[] conditions, int priority, float chance) {
-        super(conditions, priority);
+    public CityWorldChestLoot(java.util.Optional<net.minecraft.core.Holder<LootItemCondition>> condition, int priority, float chance) {
+        super(condition, priority);
         this.chance = chance;
     }
 
