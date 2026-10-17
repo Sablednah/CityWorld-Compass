@@ -34,7 +34,7 @@ base {
     archivesName = mod_id
 }
 
-// Minecraft 26.x ships Java 25 to players.
+// This line's players run Java 25.
 java.toolchain.languageVersion = JavaLanguageVersion.of(25)
 
 neoForge {

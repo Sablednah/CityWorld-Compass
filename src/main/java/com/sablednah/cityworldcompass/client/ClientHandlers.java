@@ -12,6 +12,6 @@ public final class ClientHandlers {
 
     public static void openMenu(Network.OpenMenu menu) {
         Minecraft minecraft = Minecraft.getInstance();
-        minecraft.gui.setScreen(new CompassScreen(menu));
+        minecraft.setScreen(new CompassScreen(menu));
     }
 }
