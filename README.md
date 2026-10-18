@@ -1,5 +1,7 @@
 # CityWorld Compass
 
+![CityWorld Urban Compass](docs/wordmark-850.png)
+
 Nature's Compass for [CityWorld](https://www.curseforge.com/minecraft/mc-mods/cityworld-reforged)'s cities. Right-click
 the **Urban Compass**, pick what you are looking for — a hospital, a shopping mall, a subway station, a bookshop, the
 industrial district, a named building like the Winchester — and the needle points to the nearest one.

@@ -1,3 +1,5 @@
+![CityWorld Urban Compass](https://raw.githubusercontent.com/Sablednah/CityWorld-Compass/mc26.2/docs/wordmark-850.png)
+
 # CityWorld Compass
 
 **Find anything in a CityWorld city.** Right-click the Urban Compass, pick a hospital, a shopping mall, a subway

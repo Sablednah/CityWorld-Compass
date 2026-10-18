@@ -13,6 +13,10 @@ authors="${mod_authors}"
 description='''
 ${mod_description}
 '''
+# iconFile: the square beside the name in the mod list; bannerFile: the wide image in the info panel (26.2+).
+# No logoFile on 26.2+: NeoForge calls it deprecated and stops at a warning screen when it is present.
+iconFile="cityworld_compass-icon.png"
+bannerFile="cityworld_compass.png"
 logoBlur=false
 
 [[dependencies.${mod_id}]]
