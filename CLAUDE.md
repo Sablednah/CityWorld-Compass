@@ -52,7 +52,7 @@ passed on 2026-10-17 against CityWorld dev builds carrying the 6.6.0 API.
 
 ## Releasing
 
-**1.0.0 is released** (2026-10-18): tag `v1.0.0` (`7740b169` on `mc26.2`), CurseForge project **1752214**, files
+**1.0.0 is released** (2026-10-18): tag `v1.0.0` (`7740b169` on `mc26.2`), CurseForge project **1752214** (https://www.curseforge.com/minecraft/mc-mods/cityworld-urban-compass), files
 9240462–9240467, built against the released CityWorld 6.6.0 jars (six self-tests PASS without `CW_RANGE`, halt/exit scan
 0, the 1.20.1 jar's overrides SRG-named). GitHub: https://github.com/Sablednah/CityWorld-Compass (public, default
 branch `mc26.2`). Publishing a GitHub release with the six jars fires `.github/workflows/curseforge.yml`

@@ -14,6 +14,6 @@ industrial district, a named building like the Winchester — and the needle poi
 - **Get one** by crafting (a compass ringed with bricks, lodestones in the corners) or, very rarely, from a CityWorld
   chest.
 
-Needs CityWorld 6.6.0 or later. Six Minecraft lines: 1.20.1 (Forge), 1.21.1, 1.21.11, 26.1, 26.2 and 26.3 (NeoForge).
+Needs CityWorld 6.6.0 or later. On CurseForge: https://www.curseforge.com/minecraft/mc-mods/cityworld-urban-compass Six Minecraft lines: 1.20.1 (Forge), 1.21.1, 1.21.11, 26.1, 26.2 and 26.3 (NeoForge).
 
 GPL-3.0-only, like CityWorld, whose API it builds on.
