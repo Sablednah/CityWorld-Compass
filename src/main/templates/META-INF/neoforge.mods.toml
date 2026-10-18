@@ -13,6 +13,9 @@ authors="${mod_authors}"
 description='''
 ${mod_description}
 '''
+# logoFile: the wide image in the mod info panel on this line; iconFile: the square in the list (ignored before 26.2).
+logoFile="cityworld_compass.png"
+iconFile="cityworld_compass-icon.png"
 logoBlur=false
 
 [[dependencies.${mod_id}]]
