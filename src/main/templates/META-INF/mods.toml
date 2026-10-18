@@ -13,6 +13,8 @@ authors="${mod_authors}"
 description='''
 ${mod_description}
 '''
+# logoFile: the image in the mod info panel.
+logoFile="cityworld_compass.png"
 logoBlur=false
 
 [[dependencies.${mod_id}]]
