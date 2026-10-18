@@ -52,6 +52,14 @@ passed on 2026-10-17 against CityWorld dev builds carrying the 6.6.0 API.
 
 ## Releasing
 
-Not released yet. It ships **after** CityWorld 6.6.0 (the API it needs). GitHub: https://github.com/Sablednah/CityWorld-Compass
-(public, default branch `mc26.2`, all six branches pushed 2026-10-18). The owner is creating the CurseForge project. Then: `mod_version` on every branch, `cityworld_version_range=[6.6.0,)`, point `cityworld_jar` at
+**1.0.0 is released** (2026-10-18): tag `v1.0.0` (`7740b169` on `mc26.2`), CurseForge project **1752214**, files
+9240462–9240467, built against the released CityWorld 6.6.0 jars (six self-tests PASS without `CW_RANGE`, halt/exit scan
+0, the 1.20.1 jar's overrides SRG-named). GitHub: https://github.com/Sablednah/CityWorld-Compass (public, default
+branch `mc26.2`). Publishing a GitHub release with the six jars fires `.github/workflows/curseforge.yml`
+(`scripts/curseforge-upload.sh`: loader by line, Java 17/21/25, CityWorld as a required dependency; the token and the
+project ID are repository secrets).
+
+Release day: `mod_version` on every branch, a CHANGELOG heading, self-test every line (one at a time), build (ship
+`build/libs`; on 1.20.1 check the overrides with `javap -p` for `m_…_` names), push the branches, `git tag -a`,
+`gh release create --verify-tag` with the six jars. Then: `mod_version` on every branch, `cityworld_version_range=[6.6.0,)`, point `cityworld_jar` at
 the 6.6.0 jars, self-test every line, build, tag, a release with the six jars. `CURSEFORGE.md` is the store page.
