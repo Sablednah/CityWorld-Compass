@@ -52,6 +52,6 @@ passed on 2026-10-17 against CityWorld dev builds carrying the 6.6.0 API.
 
 ## Releasing
 
-Not released yet. It ships **after** CityWorld 6.6.0 (the API it needs). The owner is creating the CurseForge project
-and GitHub repo. Then: `mod_version` on every branch, `cityworld_version_range=[6.6.0,)`, point `cityworld_jar` at
+Not released yet. It ships **after** CityWorld 6.6.0 (the API it needs). GitHub: https://github.com/Sablednah/CityWorld-Compass
+(public, default branch `mc26.2`, all six branches pushed 2026-10-18). The owner is creating the CurseForge project. Then: `mod_version` on every branch, `cityworld_version_range=[6.6.0,)`, point `cityworld_jar` at
 the 6.6.0 jars, self-test every line, build, tag, a release with the six jars. `CURSEFORGE.md` is the store page.
