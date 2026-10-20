@@ -51,6 +51,11 @@ public final class CityWorldCompass {
         Network.register();
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, Config.SPEC);
         LOGGER.info("CityWorld Compass {} initialising", ModLoadingContext.get().getActiveContainer().getModInfo().getVersion());
+        net.minecraftforge.common.MinecraftForge.EVENT_BUS.addListener(
+                (net.minecraftforge.event.entity.player.PlayerEvent.PlayerLoggedOutEvent e) ->
+                        Search.forget(e.getEntity().getUUID()));
+        net.minecraftforge.common.MinecraftForge.EVENT_BUS.addListener(
+                (net.minecraftforge.event.server.ServerStoppedEvent e) -> Search.forget(null));
     }
 
     private static void creativeTab(BuildCreativeModeTabContentsEvent event) {
