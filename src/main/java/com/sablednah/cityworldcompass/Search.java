@@ -108,8 +108,10 @@ public final class Search {
                     id, from.toShortString(), found.map(BlockPos::toShortString).orElse(gaveUp ? "gave up" : "none"), millis);
             Optional<BlockPos> result = found;
             ticker.cancel(false);
+            // Released here, not on the server thread: a world closed mid-search never runs that task, and in single
+            // player the same UUID would then be "busy" in every world until the game restarted.
+            SEARCHING.remove(player.getUUID());
             level.getServer().execute(() -> {
-                SEARCHING.remove(player.getUUID());
                 ItemStack stack = player.getItemInHand(hand);
                 if (!stack.is(CityWorldCompass.URBAN_COMPASS.get()))
                     return; // put away while it searched
@@ -131,6 +133,14 @@ public final class Search {
                 }
             });
         });
+    }
+
+    /** Forget who is searching: one player when they log out, or everyone (null) when the server stops. */
+    static void forget(@org.jetbrains.annotations.Nullable java.util.UUID player) {
+        if (player == null)
+            SEARCHING.clear();
+        else
+            SEARCHING.remove(player);
     }
 
     /** Where to point for the nearest {@code id}: a vault's door, else the middle of the chunk at street level. */
