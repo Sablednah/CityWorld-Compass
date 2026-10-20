@@ -45,6 +45,11 @@ public final class CityWorldCompass {
         modBus.addListener(CityWorldCompass::creativeTab);
         if (net.neoforged.fml.loading.FMLEnvironment.dist.isClient())
             modBus.addListener(com.sablednah.cityworldcompass.client.ClientHandlers::setup);
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(
+                net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedOutEvent.class,
+                e -> Search.forget(e.getEntity().getUUID()));
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(
+                net.neoforged.neoforge.event.server.ServerStoppedEvent.class, e -> Search.forget(null));
         container.registerConfig(ModConfig.Type.STARTUP, Config.SPEC);
         LOGGER.info("CityWorld Compass {} initialising", container.getModInfo().getVersion());
     }
